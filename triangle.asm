@@ -1,16 +1,17 @@
-; prints a left-justified pyramid of asterisks
+; prints a pyramid of asterisks
 
         global    start
         section   .text
 
 start:
-    mov     rdx, output             ; rdx holds address of next byte to write
+    mov     rdx, output           ; rdx holds address of next byte to write
     mov     r8, 1                   ; initial line length
     mov     r9, 0                   ; number of stars written on line so far
+
 start_line:
     mov     r10, maxlines           ; leading spaces counter, initialize to lines
+    sub     r10, r8                 ; subtract lines already written
     shr     r10, 1                  ; divide by half
-    sub     r10, r9                 ; subtract lines already written
 print_lead_space:
     cmp     r10, 0                  ; check spaces printed against limit
     jle     line                    ; done if we've printed all of them
@@ -24,18 +25,22 @@ line:
     inc     r9                      ; "count" number so far on line
     cmp     r9, r8                  ; did we reach the number of stars for this line?
     jne     line                    ; not yet, keep writing on this line
+
 lineDone:
     mov     byte [rdx], newline     ; write a newline char
     inc     rdx                     ; and move pointer to where next char goes
-    inc     r8                      ; next line will be one char longer
+    inc     r8                      ; next line will be two chars longer
+    inc     r8                      ; next line will be two chars longer
     mov     r9, 0                   ; reset count of stars written on this line
     cmp     r8, maxlines            ; wait, did we already finish the last line?
     jng     start_line              ; if not, begin writing this line
+
 done:
     mov     rax, syswr              ; system call for write
     mov     rdi, 1                  ; file handle 1 is stdout
     mov     rsi, output             ; address of string to output
-    mov     rdx, dataSize           ; number of bytes to write
+    mov     rbx, output
+    sub     rdx, rbx                ; change rdx to the number of bytes to write (offset from 'output')
     syscall                         ; invoke operating system to do the write
     mov     rax, 0x02000001         ; system call for exit
     xor     rdi, rdi                ; exit code 0
@@ -45,6 +50,6 @@ done:
 
 syswr       equ       0x02000004
 newline     equ       10
-maxlines    equ       8
+maxlines    equ       16
 dataSize    equ       128
 output:     resb      dataSize
